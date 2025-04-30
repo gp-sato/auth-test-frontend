@@ -2,13 +2,23 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
+// XSRF-TOKENをリクエスト時に送信するための設定
+const http = axios.create({
+  baseURL: 'http://localhost:80',
+  withCredentials: true,
+});
+
 const Test = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
     const postData = async () => {
-        axios.get('http://localhost:80/sanctum/csrf-cookie').then((res: any) => {
+        axios.get('http://localhost:80/sanctum/csrf-cookie', { withCredentials: true }).then((res: any) => {
             console.log(res);
+            // ログイン処理
+            http.post('/api/login', {email, password}, { withCredentials: true }).then((res: any) => {
+              console.log(res);
+            });
         });
     }
 
