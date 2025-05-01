@@ -12,15 +12,33 @@ const http = axios.create({
 const Test = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [token, setToken] = useState('');
+    const [user, setUser] = useState<any>(null);
 
     const postData = async () => {
-        axios.get('http://localhost:80/sanctum/csrf-cookie', { withCredentials: true }).then((res: any) => {
-            console.log(res);
-            // ログイン処理
-            http.post('/api/login', {email, password}, { withCredentials: true }).then((res: any) => {
-              console.log(res);
+        try {
+            // CSRF Cookieを取得
+            await axios.get('http://localhost:80/sanctum/csrf-cookie', { withCredentials: true });
+                
+            // ログインリクエスト
+            const res = await http.post('/api/login', {email, password}, { withCredentials: true });
+            console.log('ログイン成功:', res);
+
+            const accessToken = res.data.token;
+            setToken(accessToken);  // トークンを保存
+
+            // トークンを使ってユーザー情報を取得
+            const userRes = await http.get('/api/user', {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                }
             });
-        });
+
+            console.log('ユーザー情報:', userRes.data);
+            setUser(userRes.data);  // ユーザー情報を保存
+        } catch (error) {
+            console.error('ログインまたはユーザー情報取得エラー', error);
+        }
     }
 
     return (
@@ -49,6 +67,15 @@ const Test = () => {
                     }}
                 >送信</button>
             </div>
+
+            {user && (
+                <div className='m-3 p-3 bg-green-100 rounded'>
+                    <h3 className='font-bold'>ユーザー情報</h3>
+                    <p><strong>ID:</strong>{user.id}</p>
+                    <p><strong>名前:</strong>{user.name}</p>
+                    <p><strong>Email:</strong>{user.email}</p>
+                </div>
+            )}
         </div>
     );
 }
